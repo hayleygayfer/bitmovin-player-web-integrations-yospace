@@ -18,7 +18,6 @@ import {
   TimedMetadata,
   UNKNOWN_FORMAT,
   YoLog,
-  ViewSize,
 } from '@yospace/admanagement-sdk';
 
 import Player, {
@@ -40,7 +39,6 @@ import Player, {
   TimeChangedEvent,
   TimeRange,
   UserInteractionEvent,
-  ViewMode,
 } from 'bitmovin-player/modules/bitmovinplayer-core';
 
 import {
@@ -254,10 +252,8 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
               };
 
           // convert start time (relative) to an absolute time
-          // TODO: implement this for DVRLive if needed
           if (
-            (this.yospaceSourceConfig.assetType === YospaceAssetType.VOD ||
-              this.yospaceSourceConfig.assetType === YospaceAssetType.DVRLIVE) &&
+            this.yospaceSourceConfig.assetType === YospaceAssetType.VOD &&
             clonedSource.options &&
             clonedSource.options.startOffset
           ) {
@@ -432,26 +428,13 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
       return this.getCurrentAdDuration();
     }
 
-    switch (this.yospaceSourceConfig.assetType) {
-      case YospaceAssetType.VOD:
-        return toSeconds(
-          (this.session as SessionVOD).getContentPositionForPlayhead(toMilliseconds(this.player.getDuration()))
-        );
-      case YospaceAssetType.LINEAR:
-        if (this.isLive()) {
-          return this.player.getDuration();
-        }
-        break;
-      case YospaceAssetType.DVRLIVE:
-        // TODO: implement this
-        // removing ad time from stream start offset not necessary for DVRLive?
-        // return toSeconds(
-        //   (this.session as SessionDVRLive).
-        // );
-        break;
-      default:
-        return 0;
+    if (this.isLive()) {
+      return this.player.getDuration();
     }
+
+    return toSeconds(
+      (this.session as SessionVOD).getContentPositionForPlayhead(toMilliseconds(this.player.getDuration()))
+    );
   }
 
   /**
@@ -807,50 +790,34 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
   }
 
   private toMagicTime(playbackTime: number): number {
+    if (this.isLive()) return playbackTime;
     if (!this.session) return playbackTime;
 
-    switch (this.yospaceSourceConfig.assetType) {
-      case YospaceAssetType.VOD:
-        /**
-         * Provides a relative content playhead position to the client,
-         * discounting the sum of all ad break durations prior to the
-         * absolute playhead position provided. This allows the client
-         * to return to the same content position if a VOD stream is
-         * stopped before playback ends.
-         */
-        return toSeconds((this.session as SessionVOD).getContentPositionForPlayhead(toMilliseconds(playbackTime)));
-      case YospaceAssetType.LINEAR:
-        if (this.isLive()) return playbackTime;
-        break;
-      case YospaceAssetType.DVRLIVE:
-        if (this.isLive()) return playbackTime;
-        break;
-      default:
-        return playbackTime;
-    }
+    /**
+     * Provides a relative content playhead position to the client,
+     * discounting the sum of all ad break durations prior to the
+     * absolute playhead position provided. This allows the client
+     * to return to the same content position if a VOD stream is
+     * stopped before playback ends.
+     */
+    return toSeconds((this.session as SessionVOD).getContentPositionForPlayhead(toMilliseconds(playbackTime)));
   }
 
   private toAbsoluteTime(relativeTime: number): number {
-    if (!this.session) return relativeTime;
+    if (this.yospaceSourceConfig.assetType === YospaceAssetType.VOD) {
+      if (!this.session) return relativeTime;
 
-    switch (this.yospaceSourceConfig.assetType) {
-      case YospaceAssetType.VOD:
-        /**
-         * Provides an absolute playhead position to the client
-         * calculating the sum of all ad break durations prior to
-         * that absolute playhead position plus the relative content
-         * playhead position. This allows the client to return to
-         * the same content position if a VOD stream is stopped
-         * before playback ends.
-         */
-        return toSeconds((this.session as SessionVOD).getPlayheadForContentPosition(toMilliseconds(relativeTime)));
-      case YospaceAssetType.LINEAR:
-        return relativeTime;
-      case YospaceAssetType.DVRLIVE:
-        // Implement for DVRLive
-        break;
-      default:
-        return relativeTime;
+      /**
+       * Provides an absolute playhead position to the client
+       * calculating the sum of all ad break durations prior to
+       * that absolute playhead position plus the relative content
+       * playhead position. This allows the client to return to
+       * the same content position if a VOD stream is stopped
+       * before playback ends.
+       */
+      return toSeconds((this.session as SessionVOD).getPlayheadForContentPosition(toMilliseconds(relativeTime)));
+    } else {
+      return relativeTime;
     }
   }
 
@@ -1127,8 +1094,6 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
     this.player.on(this.player.exports.PlayerEvent.Muted, this.onMuted);
     this.player.on(this.player.exports.PlayerEvent.Unmuted, this.onUnmuted);
 
-    this.player.on(this.player.exports.PlayerEvent.ViewModeChanged, this.onViewSizeChanged);
-
     // To support ads in live streams we need to track metadata events
     this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
   }
@@ -1246,18 +1211,6 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
     Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onVolumeChange(muted=false)');
     this.session.onVolumeChange(false);
   };
-
-  // ON VIEW SIZE CHANGE (CHECK THIS COULD BE BAD)
-  private onViewSizeChanged = (event: UserInteractionEvent) => {
-    if (this.player.getViewMode() === ViewMode.Fullscreen) {
-      Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onViewSizeChange(ViewSize.EXPANDED)');
-      this.session.onViewSizeChange(ViewSize.EXPANDED);
-    } else {
-      Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onViewSizeChange(ViewSize.COLLAPSED)');
-      this.session.onViewSizeChange(ViewSize.COLLAPSED);
-    }
-  };
-  /////
 
   private onMetaData = (event: MetadataEvent) => {
     const validTypes = ['ID3', 'EMSG', 'DATERANGE'];
