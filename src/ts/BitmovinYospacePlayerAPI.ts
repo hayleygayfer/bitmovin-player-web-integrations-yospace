@@ -13,6 +13,7 @@ import {
 
 export enum YospaceAssetType {
   LINEAR,
+  DVRLIVE,
   VOD,
 }
 
