@@ -27,7 +27,6 @@ import {
   VideoQuality,
   ViewMode,
   ViewModeOptions,
-  AdaptationAPI,
 } from 'bitmovin-player/modules/bitmovinplayer-core';
 import { InternalBitmovinYospacePlayer } from './InternalBitmovinYospacePlayer';
 
@@ -277,10 +276,6 @@ export class BitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
 
   get manifest(): PlayerManifestAPI {
     return this.player.manifest;
-  }
-
-  get adaptation(): AdaptationAPI {
-    return this.player.adaptation;
   }
 
   addMetadata(metadataType: MetadataType.CAST, metadata: any): boolean {
