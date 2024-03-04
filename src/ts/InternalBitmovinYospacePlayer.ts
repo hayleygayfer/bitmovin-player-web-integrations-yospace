@@ -18,6 +18,7 @@ import {
   TimedMetadata,
   UNKNOWN_FORMAT,
   YoLog,
+  ViewSize,
 } from '@yospace/admanagement-sdk';
 
 import Player, {
@@ -39,6 +40,8 @@ import Player, {
   TimeChangedEvent,
   TimeRange,
   UserInteractionEvent,
+  ViewModeChangedEvent,
+  ViewMode,
 } from 'bitmovin-player/modules/bitmovinplayer-core';
 
 import {
@@ -1094,6 +1097,8 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
     this.player.on(this.player.exports.PlayerEvent.Muted, this.onMuted);
     this.player.on(this.player.exports.PlayerEvent.Unmuted, this.onUnmuted);
 
+    this.player.on(this.player.exports.PlayerEvent.ViewModeChanged, this.onViewSizeChanged);
+
     // To support ads in live streams we need to track metadata events
     this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
   }
@@ -1109,6 +1114,8 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
 
     this.player.off(this.player.exports.PlayerEvent.Muted, this.onMuted);
     this.player.off(this.player.exports.PlayerEvent.Unmuted, this.onUnmuted);
+
+    this.player.off(this.player.exports.PlayerEvent.ViewModeChanged, this.onViewSizeChanged);
 
     // To support ads in live streams we need to track metadata events
     this.player.off(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
@@ -1210,6 +1217,16 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
   private onUnmuted = (event: UserInteractionEvent) => {
     Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onVolumeChange(muted=false)');
     this.session.onVolumeChange(false);
+  };
+
+  private onViewSizeChanged = (event: ViewModeChangedEvent) => {
+    if (event.from !== ViewMode.Fullscreen && event.to === ViewMode.Fullscreen) {
+      Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onViewSizeChanged(ViewSize.EXPANDED)');
+      this.session.onViewSizeChange(ViewSize.EXPANDED);
+    } else if (event.from === ViewMode.Fullscreen && event.to !== ViewMode.Fullscreen) {
+      Logger.log('[BitmovinYospacePlayer] - sending YospaceAdManagement.onViewSizeChanged(ViewSize.COLLAPSED)');
+      this.session.onViewSizeChange(ViewSize.COLLAPSED);
+    }
   };
 
   private onMetaData = (event: MetadataEvent) => {
