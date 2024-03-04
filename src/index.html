@@ -109,6 +109,9 @@
                 <input type="radio" name="options" id="option-live" autocomplete="off" />Yospace Live
               </label>
               <label class="btn btn-outline-secondary">
+                <input type="radio" name="options" id="option-dvr-live" autocomplete="off" />Yospace DVRLive
+              </label>
+              <label class="btn btn-outline-secondary">
                 <input type="radio" name="options" id="option-aom" autocomplete="off" />Art of motion
               </label>
             </div>
@@ -127,7 +130,8 @@
               <select class="custom-select col-2" id="stream-type-select">
                 <option value="1">VoD</option>
                 <option value="2">Live</option>
-                <option value="3">None</option>
+                <option value="3">DVRLive</option>
+                <option value="4">None</option>
               </select>
               <div class="input-group-append">
                 <button id="load-custom-steam" class="btn btn-outline-secondary" type="button">Load</button>
@@ -217,6 +221,7 @@
       var vodButton = $('#option-vod').parent();
       var trueXButton = $('#option-vod-truex').parent();
       var liveButton = $('#option-live').parent();
+      var dvrLiveButton = $('#option-dvr-live').parent();
       var artOfMotionButton = $('#option-aom').parent();
       var customStreamButton = $('#load-custom-steam');
       var customStreamTypeSelect = $('#stream-type-select');
@@ -335,6 +340,14 @@
         yospacePlayer.load(liveSource);
       });
 
+      dvrLiveButton.on('click', function () {
+        dvrLiveButton.button('toggle');
+        deselectCustomLoadButton();
+
+        yospacePlayer.unload();
+        yospacePlayer.load(dvrLiveSource);
+      });
+
       artOfMotionButton.on('click', () => {
         artOfMotionButton.button('toggle');
         deselectCustomLoadButton();
@@ -364,6 +377,8 @@
           customSource.assetType = bitmovin.player.ads.yospace.YospaceAssetType.VOD;
         } else if (customStreamTypeSelect.val() === '2') {
           customSource.assetType = bitmovin.player.ads.yospace.YospaceAssetType.LINEAR;
+        } else if (customStreamTypeSelect.val() === '3') {
+          customSource.assetType = bitmovin.player.ads.yospace.YospaceAssetType.DVRLIVE;
         }
 
         yospacePlayer.unload();
@@ -386,6 +401,15 @@
         // hls: 'https://csm-e-sdk-validation.bln1.yospace.com/csm/extlive/yospace02,hlssample42.m3u8?yo.br=true&yo.av=3',
         // Yospace configuration
         assetType: bitmovin.player.ads.yospace.YospaceAssetType.LINEAR,
+      };
+
+      var dvrLiveSource = {
+        title: 'DVRLive Stream',
+        // dash: "https://csm-e-sdk-validation.bln1.yospace.com/csm/extlive/yosdk01,t2-dash.mpd?yo.av=3", // v0 emsg
+        dash: 'https://csm-e-sdk-validation.bln1.yospace.com/csm/extlive/yosdk01,dash.mpd?yo.av=4', // v1 emsg
+        // hls: 'https://csm-e-sdk-validation.bln1.yospace.com/csm/extlive/yospace02,hlssample42.m3u8?yo.br=true&yo.av=3',
+        // Yospace configuration
+        assetType: bitmovin.player.ads.yospace.YospaceAssetType.DVRLIVE,
       };
 
       var vodSource = {
