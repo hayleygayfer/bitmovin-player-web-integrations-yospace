@@ -1100,9 +1100,7 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
     this.player.on(this.player.exports.PlayerEvent.ViewModeChanged, this.onViewSizeChanged);
 
     // To support ads in live streams we need to track metadata events
-    if (this.yospaceSourceConfig.assetType === YospaceAssetType.LINEAR) {
-      this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
-    }
+    this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
   }
 
   private unregisterPlayerEvents(): void {
@@ -1120,9 +1118,7 @@ export class InternalBitmovinYospacePlayer implements BitmovinYospacePlayerAPI {
     this.player.off(this.player.exports.PlayerEvent.ViewModeChanged, this.onViewSizeChanged);
 
     // To support ads in live streams we need to track metadata events
-    if (this.yospaceSourceConfig.assetType === YospaceAssetType.LINEAR) {
-      this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
-    }
+    this.player.on(this.player.exports.PlayerEvent.Metadata, this.onMetaData);
   }
 
   private onPlaying = () => {
