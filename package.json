@@ -34,7 +34,7 @@
     "stream-browserify": "^3.0.0"
   },
   "peerDependencies": {
-    "@yospace/admanagement-sdk": "3.6.0",
+    "@yospace/admanagement-sdk": "^3.6.0",
     "bitmovin-player": "^8.126.0"
   },
   "devDependencies": {
