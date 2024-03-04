@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## 2.4.0 - 2024-03-04
+
+### Changed
+
+- Bitmovin Player to version [8.126.0](https://developer.bitmovin.com/playback/docs/release-notes-web#81260)
+
+### Added
+
+- Support for `DVRLive` Yospace session type
+- Yospace `onViewSizeChange` event, which is triggered on the Bitmovin `PlayerEvent.ViewModeChanged` event
+- `get adaptation()` method in `BitmovinYospacePlayer.ts` as required by Bitmovin Player verison `8.126.0`
+
 ## 2.3.1 - 2024-02-14
 
 ### Removed
